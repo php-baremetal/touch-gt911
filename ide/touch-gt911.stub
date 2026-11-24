@@ -1,0 +1,52 @@
+<?php
+// php-baremetal/touch-gt911 1.0.0 — IDE helper, not loaded at runtime.
+
+namespace Baremetal\I2c\Driver {
+    /**
+     * The GT911 capacitive touch controller: up to five fingers, each with an id kept from its Pressed to its
+     * Released. Coordinates are scaled from the chip's resolution to $width x $height, then turned like the display.
+     */
+    class Gt911 extends \Baremetal\I2c\Device implements \Baremetal\Input\Touch
+    {
+        /**
+         * The controller on $bus. With $rst, it is reset and its address chosen with the INT line (low: 0x5D, high:
+         * 0x14); $int and $rst are GPIO numbers or pins of the board's expander ("exio1").
+         *
+         * The chip's configuration is read (its resolution, its INT mode), never written. Constructing it again
+         * with the same bus and address returns a handle to the same device; the first construction decides the
+         * pins, the size and the orientation.
+         *
+         * @param int $width The screen's width before $swap_xy; 0: the chip's resolution.
+         * @param int $height The screen's height before $swap_xy; 0: the chip's resolution.
+         * @param int $poll_ms Without $int on a GPIO, events() reads the chip every $poll_ms ms (5 to 100); 0: 10 ms.
+         * @throws \RuntimeException When no GT911 answers (its product id is not 911), or a pin cannot be used.
+         * @throws \ValueError When a size is outside 0 to 4096 or $poll_ms is not 0 or 5 to 100.
+         */
+        public function __construct(\Baremetal\I2c\Bus $bus, int $address = 0x5D, int|string $int = -1,
+            int|string $rst = -1, int $width = 0, int $height = 0, bool $mirror_x = false, bool $mirror_y = false,
+            bool $swap_xy = false, int $poll_ms = 0) {}
+
+        /** The controller described by the board's block (by default 'touch'), on the bus of its 'i2c' block. */
+        public static function onboard(string $block = 'touch'): Gt911 {}
+
+        /** {@inheritDoc} */
+        public function point(): ?array {}
+
+        /** {@inheritDoc} */
+        public function points(): array {}
+
+        /** {@inheritDoc} */
+        public function maxPoints(): int {}
+
+        /**
+         * {@inheritDoc}
+         *
+         * With $int on a GPIO the events follow the INT line; otherwise the chip is read every $poll_ms ms.
+         *
+         * @throws \RuntimeException With the INT line, when the chip is configured to signal with INT high
+         *                           (0x804D bits 1:0 = 11).
+         * @throws \Error When the event service cannot start; point() and points() then go on reading the chip.
+         */
+        public function events(): \Baremetal\Source {}
+    }
+}
